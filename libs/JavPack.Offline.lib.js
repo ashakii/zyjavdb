@@ -5,7 +5,7 @@ class Offline {
 
   static defaultColor = "is-info";
 
-  static defaultRename = "${gongyan}${zh}${crack}${fourk} [${nvyou}] ${code}";
+  static defaultRename = "${wuma}${gongyan}${zh}${crack}${fourk} [${nvyou}] ${code}";
 
   static defaultOptions = {
     tags: ["genres", "actors"],
@@ -32,7 +32,8 @@ class Offline {
     zh: "[中字]",
     crack: "[破解]",
     fourk: "[4K]",
-    gongyan: "[共演]"
+    gongyan: "[共演]",
+    wuma: "[无码]",
   };
 
   static parseVar(txt, params, rep = "") {
@@ -60,6 +61,7 @@ class Offline {
           rename = rename.replaceAll("${crack}", "$crack");
           rename = rename.replaceAll("${fourk}", "$fourk");
           rename = rename.replaceAll("${gongyan}", "$gongyan");
+          rename = rename.replaceAll("${wuma}", "$wuma");
           if (!rename.includes("${code}")) rename = "${code} " + rename;
         }
 
@@ -114,6 +116,7 @@ class Offline {
       rename: this.parseVar(rename, details),
       tags: options.tags.flatMap((key) => details[key]).filter(Boolean),
       gongyan: details.gongyan,
+      wuma: details.wuma,
     };
   }
 
