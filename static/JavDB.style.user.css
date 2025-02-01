@@ -5,18 +5,18 @@
   --x-size-md: 0.875rem;
   --x-trans: all 0.3s cubic-bezier(0, 0, 0.5, 1);
   --x-shadow: 2px 4px 12px #00000014;
-  --x-success: rgb(25 135 84);
-  --x-info: rgb(13 110 253);
-  --x-warning: rgb(255 193 7);
-  --x-danger: rgb(220 53 69);
-  --x-success-bd: rgb(163 207 187);
-  --x-info-bd: rgb(158 197 254);
-  --x-warning-bd: rgb(255 230 156);
-  --x-danger-bd: rgb(241 174 181);
-  --x-fourk: rgb(15, 7, 255);
-  --x-wuma: rgb(236, 18, 156);
-  --x-fourk-bd: rgb(15, 7, 255);
-  --x-wuma-bd: rgb(236, 18, 156);
+  --x-success: rgb(72, 199, 142);
+  --x-info: rgb(62, 142, 208);
+  --x-warning: rgb(255, 183, 15);
+  --x-danger: rgb(241, 70, 104);
+  --x-success-bd: rgb(72, 199, 142);
+  --x-info-bd: rgb(62, 142, 208);
+  --x-warning-bd: rgb(255, 183, 15);
+  --x-danger-bd: rgb(241, 70, 104);
+  --x-fourk: rgb(41, 66, 255);
+  --x-wuma: rgb(252, 28, 227);
+  --x-fourk-bd: rgb(41, 66, 255);
+  --x-wuma-bd: rgb(252, 28, 227);
 
   &[data-theme="dark"] {
     --x-success-bd: rgb(15 81 50);
@@ -54,17 +54,18 @@
   }
 }
 
-.button.is-fourk {
-  background-color: rgb(15, 7, 255);
+.is-fourk {
+  background-color: var(--x-fourk) !important;
   border-color: transparent;
-  color: #fff;
+  color: #fff !important;
 }
 
-.button.is-wuma {
-  background-color: rgb(236, 18, 156);
+.is-wuma {
+  background-color: var(--x-wuma) !important;
   border-color: transparent;
-  color: #fff;
+  color: #fff !important;
 }
+
 
 html {
   overflow-y: overlay;
@@ -260,10 +261,11 @@ body:has(.x-load) #footer,
 }
 
 .movie-list {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   gap: var(--x-gap);
   align-items: start;
   padding-bottom: 0;
+
 
   &.v {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -316,6 +318,16 @@ body:has(.x-load) #footer,
       border-color: var(--x-info-bd);
     }
 
+    &:has(.x-match.is-fourk) {
+      background-color: var(--x-fourk-bd);
+      border-color: var(--x-fourk-bd);
+    }
+
+    &:has(.x-match.is-wuma) {
+      background-color: var(--x-wuma-bd);
+      border-color: var(--x-wuma-bd);
+    }
+
     &:has(.x-match.is-warning) {
       background-color: var(--x-warning-bd);
       border-color: var(--x-warning-bd);
@@ -326,15 +338,6 @@ body:has(.x-load) #footer,
       border-color: var(--x-danger-bd);
     }
 
-    &:has(.x-match.is-fourk) {
-      background-color: var(--x-fourk-bd);
-      border-color: var(--x-fourk-bd);
-    }
-
-    &:has(.x-match.is-wuma) {
-      background-color: var(--x-wuma-bd);
-      border-color: var(--x-wuma-bd);
-    }
 
     .cover {
       padding-top: 67.25%;
@@ -1031,4 +1034,31 @@ br+.title {
     background-color: #aa9084;
     object-fit: contain;
   }
+}
+
+a.is-addon {
+  display: inline-block;
+  margin-left: 3px !important;
+  margin-top: -0.3em !important;
+  padding: 0 5px 0 5px !important;
+  width: auto;
+  max-width: 390px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+a.is-addon:visited {
+  color: red !important;
+}
+
+a.is-addon:hover {
+  outline: 1px solid red;
+  box-shadow: 0 0 8px rgba(255, 0, 0, 0.3);
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.gongyan {
+  outline: 4px dashed rgb(0, 181, 39);
 }
