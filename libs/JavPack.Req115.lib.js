@@ -309,11 +309,12 @@ class Req115 extends Drive115 {
     if (labels.length) return this.filesBatchLabel(files.map((it) => it.fid).toString(), labels.toString());
   }
 
-  static handleRename(files, cid, { rename, renameTxt, zh, crack }) {
+  static handleRename(files, cid, { rename, renameTxt, zh, crack, fourk, gongyan, wuma }) {
     rename = rename.replaceAll("$zh", zh ? renameTxt.zh : "");
     rename = rename.replaceAll("$crack", crack ? renameTxt.crack : "");
     rename = rename.replaceAll("$fourk", fourk ? renameTxt.fourk : "");
     rename = rename.replaceAll("$gongyan", gongyan ? renameTxt.gongyan : "");
+    rename = rename.replaceAll("$wuma", wuma ? renameTxt.wuma : "");
     rename = rename.trim();
 
     const renameObj = { [cid]: rename };
@@ -357,7 +358,7 @@ class Req115 extends Drive115 {
   }
 
   static async handleOffline(
-    { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan },
+    { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan, wuma },
     magnets,
   ) {
     const res = { status: "error", msg: `获取目录失败: ${dir.join("/")}` };
@@ -395,7 +396,7 @@ class Req115 extends Drive115 {
 
       if (tags.length) this.handleTags(videos, tags);
 
-      if (rename) this.handleRename(files, file_id, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan });
+      if (rename) this.handleRename(files, file_id, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma });
 
       if (cover) {
         try {
