@@ -309,7 +309,26 @@ class Req115 extends Drive115 {
     if (labels.length) return this.filesBatchLabel(files.map((it) => it.fid).toString(), labels.toString());
   }
 
-  static handleRename(files, cid, { rename, renameTxt, zh, crack, fourk, gongyan, wuma }) {
+  static async createStrm(strmObj) {
+    const id = Object.keys(strmObj)[0];  // 获取 id
+    const name = strmObj[id];  // 获取 rename
+
+    if (!id || !name) {
+      console.error("Invalid strmObj format");
+      return;
+    }
+
+    fetch("https://192.168.100.1:5002/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, name })
+    })
+      .then(response => response.json())
+      .then(data => console.log(data))
+      .catch(error => console.error("Error:", error));
+  }
+
+  static handleRename(files, cid, pc, { rename, renameTxt, zh, crack, fourk, gongyan, wuma }) {
     rename = rename.replaceAll("$zh", zh ? renameTxt.zh : "");
     rename = rename.replaceAll("$crack", crack ? renameTxt.crack : "");
     rename = rename.replaceAll("$fourk", fourk ? renameTxt.fourk : "");
@@ -318,10 +337,12 @@ class Req115 extends Drive115 {
     rename = rename.trim();
 
     const renameObj = { [cid]: rename };
+    const strmObj = {[pc]:rename};
 
     if (files.length === 1) {
       const { fid, ico } = files[0];
       renameObj[fid] = `${rename}.${ico}`;
+      this.createStrm(strmObj);
       return this.filesBatchRename(renameObj);
     }
 
@@ -335,17 +356,20 @@ class Req115 extends Drive115 {
     for (const [ico, items] of Object.entries(icoMap)) {
       if (items.length === 1) {
         renameObj[items[0].fid] = `${rename}.${ico}`;
+        strmObj[items[0].pc] = rename;
         continue;
       }
 
       items
         .toSorted((a, b) => a.n.localeCompare(b.n))
-        .forEach(({ fid }, idx) => {
+        .forEach(({ fid, pc }, idx) => {
           const no = noTxt.replaceAll("${no}", `${idx + 1}`);
           renameObj[fid] = `${rename}${no}.${ico}`;
+          strmObj[pc] = `${rename}${no}`;
         });
     }
 
+    this.createStrm(strmObj);
     return this.filesBatchRename(renameObj);
   }
 
@@ -356,6 +380,8 @@ class Req115 extends Drive115 {
     const res = await this.sampleInitUpload({ cid, filename, filesize: file.size });
     if (res?.host) return this.upload({ ...res, filename, file });
   }
+
+
 
   static async handleOffline(
     { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan, wuma },
@@ -378,7 +404,7 @@ class Req115 extends Drive115 {
         break;
       }
 
-      const { videos, file_id } = await this.handleVerify(info_hash, { regex, codes }, verifyOptions);
+      const { videos, file_id, pc } = await this.handleVerify(info_hash, { regex, codes }, verifyOptions);
 
       if (!videos.length) {
         if (verifyOptions.clean) this.lixianTaskDel([info_hash]);
@@ -391,12 +417,12 @@ class Req115 extends Drive115 {
 
       const { data: srts = [] } = await this.filesAllSRTs(file_id);
       const files = [...videos, ...srts];
-
+      
       if (clean) await this.handleClean(files, file_id);
 
       if (tags.length) this.handleTags(videos, tags);
 
-      if (rename) this.handleRename(files, file_id, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma });
+      if (rename) this.handleRename(files, file_id, pc, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma });
 
       if (cover) {
         try {
