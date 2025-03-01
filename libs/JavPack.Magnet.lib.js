@@ -5,9 +5,13 @@ class Magnet {
   static ucReg = /-uc|破解-c|(UC.torrent)|C.torrent.无码|C.torrent.无码破解/i;
   static chReg = /(?!6k(-C)?|破解-C)(-c)/i;
   static crReg = /(?!6k(-C)?|破解-C)(破解)/i;
-  static wumaReg = /无码|無碼|流出/i;
+  static wumaReg = /(?:无码|無碼|流出)(?!破解)/i;
   static vrReg = /VR|時間/i;
   static torrentReg = /\.torrent($|\.)/;
+  static gg5Reg = /C_GG5/;
+  static fc2Reg = /FC2-/i;
+  static topReg = /\[TOP250]/i;
+  static gongyanReg = /\[共演]/i;
   static useTransByte() {
     const rules = [
       { unit: /byte/i, trans: (size) => size },
@@ -38,8 +42,10 @@ class Magnet {
 
   static magnetSort = (a, b) => {
     if (a.torr !== b.torr) return a.torr ? -1 : 1;
+    if (a.gg5 !== b.gg5) return a.gg5 ? -1 : 1;
     if (a.zh !== b.zh) return a.zh ? -1 : 1;
     if (a.crack !== b.crack) return a.crack ? -1 : 1;
+    if (a.fourk !== b.fourk) return a.fourk ? -1 : 1;
     return parseFloat(b.size) - parseFloat(a.size);
   };
 }
