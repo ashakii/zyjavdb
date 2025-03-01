@@ -39,7 +39,7 @@ class Drive115 extends Req {
    */
   static filesVideo(pickcode) {
     return this.request({
-      url: "https://v.anxia.com/webapi/files/video",
+      url: "https://115vod.com/webapi/files/video",
       params: { pickcode, local: 1 },
     });
   }
@@ -164,6 +164,13 @@ class Drive115 extends Req {
       data: { fid, fid_cover },
     });
   }
+  //备注 '<p><span+style="font-size:+32px;">神谷姬</span></p>'
+  static descEdit(fid, file_desc) {
+    return this.post({
+      url: "https://webapi.115.com/files/edit",
+      data: { fid, file_desc },
+    });
+  }
 }
 
 class Req115 extends Drive115 {
@@ -188,7 +195,7 @@ class Req115 extends Drive115 {
   }
 
   static filesSearchAllVideos(search_value, params = {}) {
-    return this.filesSearchAll(search_value, { ...params, type: 4 });
+    return this.filesSearchAll(search_value, { ...params, cid: "3021243513179208790", type: 4 });
   }
 
   static filesSearchAllFolders(search_value, params = {}) {
@@ -309,40 +316,74 @@ class Req115 extends Drive115 {
     if (labels.length) return this.filesBatchLabel(files.map((it) => it.fid).toString(), labels.toString());
   }
 
-  static async createStrm(strmObj) {
-    const id = Object.keys(strmObj)[0];  // 获取 id
-    const name = strmObj[id];  // 获取 rename
+  static async searchStrm(code) {
+    try {
+      const response = await fetch(`https://192.168.100.1:5002/strms?code=${code}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        mode: "cors"
+      });
 
-    if (!id || !name) {
-      console.error("Invalid strmObj format");
-      return;
+      if (!response.ok) console.log('无服务器返回数据...')
+
+      const data = await response.json(); // 解析 JSON 数据
+      return data;
+    } catch (error) {
+      console.error("Error fetching strm files:", error);
+      return null;
     }
+  }
 
-    fetch("https://192.168.100.1:5002/create", {
+  //strmobj: {[pickcode]: name}
+  static async createStrm(strmObj, dir, code) {
+    const pathname = dir[dir.length - 1];  // 获取 dir
+
+    for (const [pickcode, name] of Object.entries(strmObj)) {
+      if (!pickcode || !name) {
+        console.error("无效的pickcode:", pickcode);
+        continue;
+      }
+
+      fetch("https://192.168.100.1:5002/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pickcode, pathname, name, code }),
+        mode: "cors"
+      })
+        .then(response => response.json())
+        .then(data => console.log(data))
+        .catch(error => console.error("Error:", error));
+    }
+  }
+
+  static async deleteStrm(pickcode) {
+    fetch("https://192.168.100.1:5002/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, name })
+      body: JSON.stringify({ pickcode }),
     })
       .then(response => response.json())
       .then(data => console.log(data))
       .catch(error => console.error("Error:", error));
   }
 
-  static handleRename(files, cid, pc, { rename, renameTxt, zh, crack, fourk, gongyan, wuma }) {
+  static handleRename(code, dir, files, cid, { rename, renameTxt, zh, crack, fourk, gongyan, wuma, top250 }) {
+    rename = rename.replaceAll("$top250", top250 ? renameTxt.top250 : "");
     rename = rename.replaceAll("$zh", zh ? renameTxt.zh : "");
-    rename = rename.replaceAll("$crack", crack ? renameTxt.crack : "");
+    rename = rename.replaceAll("$crack", (crack && !wuma) ? renameTxt.crack : "");
     rename = rename.replaceAll("$fourk", fourk ? renameTxt.fourk : "");
     rename = rename.replaceAll("$gongyan", gongyan ? renameTxt.gongyan : "");
     rename = rename.replaceAll("$wuma", wuma ? renameTxt.wuma : "");
     rename = rename.trim();
 
     const renameObj = { [cid]: rename };
-    const strmObj = {[pc]:rename};
+    const strmObj = {};
 
     if (files.length === 1) {
-      const { fid, ico } = files[0];
+      const { fid, ico, pc } = files[0];
       renameObj[fid] = `${rename}.${ico}`;
-      this.createStrm(strmObj);
+      strmObj[pc] = rename;
+      this.createStrm(strmObj, dir, code);
       return this.filesBatchRename(renameObj);
     }
 
@@ -369,7 +410,7 @@ class Req115 extends Drive115 {
         });
     }
 
-    this.createStrm(strmObj);
+    this.createStrm(strmObj, dir, code);
     return this.filesBatchRename(renameObj);
   }
 
@@ -384,11 +425,12 @@ class Req115 extends Drive115 {
 
 
   static async handleOffline(
-    { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan, wuma },
+    { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan, wuma, top250, title, actorLinks, serieshref, series, year },
     magnets,
   ) {
-    const res = { status: "error", msg: `获取目录失败: ${dir.join("/")}` };
-    const cid = await this.handleDir(dir);
+    const newdir = [...dir, year];
+    const res = { status: "error", msg: `获取目录失败: ${newdir.join("/")}` };
+    const cid = await this.handleDir(newdir);
     if (!cid) return res;
 
     for (let index = 0, { length } = magnets; index < length; index++) {
@@ -404,11 +446,11 @@ class Req115 extends Drive115 {
         break;
       }
 
-      const { videos, file_id, pc } = await this.handleVerify(info_hash, { regex, codes }, verifyOptions);
+      const { videos, file_id } = await this.handleVerify(info_hash, { regex, codes }, verifyOptions);
 
       if (!videos.length) {
         if (verifyOptions.clean) this.lixianTaskDel([info_hash]);
-        if (file_id && clean) this.rbDelete([file_id], cid);
+        if (file_id && verifyOptions.clean) this.rbDelete([file_id], cid);
 
         res.msg = `${code} 离线验证失败`;
         res.status = "error";
@@ -417,12 +459,44 @@ class Req115 extends Drive115 {
 
       const { data: srts = [] } = await this.filesAllSRTs(file_id);
       const files = [...videos, ...srts];
-      
+      let actorLinksHtml = '';
+      let file_desc = '';
+      if (actorLinks) {
+        actorLinksHtml = actorLinks.map(actor => `
+      <p>
+        <a href="${actor.href}" target="_blank" textvalue="${actor.href}" 
+          style="background-color: rgb(255, 255, 255); color: rgb(242, 2, 87);">
+          <span style="background-color: rgb(255, 255, 255); color: rgb(242, 2, 87);">
+            <strong>${actor.name}</strong>
+          </span>
+        </a>
+      </p>
+    `).join('');
+
+        file_desc = `
+      <p><a href="${url}" target="_blank">${url}</a></p>
+      <hr k_oof_k="line" style="border:0; border-top:1px #ccc dashed; height:0; overflow: hidden; margin: 10px 0;">
+      <p><strong>${title}</strong></p>
+      <hr k_oof_k="line" style="border:0; border-top:1px #ccc dashed; height:0; overflow: hidden; margin: 10px 0;">
+      ${actorLinksHtml}
+    `;
+        if (series) file_desc += `<p>
+          <a href="${serieshref}" target="_blank" textvalue="${serieshref}" 
+            style="background-color: rgb(255, 255, 255); color: rgb(255, 6, 180);">
+            <span style="background-color: rgb(255, 255, 255); color: rgb(255, 6, 180);">
+              <strong>${series}</strong>
+            </span>
+          </a>
+        </p>`;
+      }
+      // const file_desc = `<p><a+href="${url}">${url}</a></p><p><strong>${title}</strong></p>`
+      this.descEdit(file_id, file_desc);
+
       if (clean) await this.handleClean(files, file_id);
 
       if (tags.length) this.handleTags(videos, tags);
 
-      if (rename) this.handleRename(files, file_id, pc, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma });
+      if (rename) this.handleRename(code, dir, files, file_id, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma, top250 });
 
       if (cover) {
         try {
