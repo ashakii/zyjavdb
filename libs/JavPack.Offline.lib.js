@@ -5,7 +5,7 @@ class Offline {
 
   static defaultColor = "is-info";
 
-  static defaultRename = "${wuma}${gongyan}${zh}${crack}${fourk} [${nvyou}] ${code}";
+  static defaultRename = "${top250}${wuma}${gongyan}${zh}${crack}${fourk} [${year}] [${nvyou}] ${code}";
 
   static defaultOptions = {
     tags: ["genres", "actors"],
@@ -34,6 +34,7 @@ class Offline {
     fourk: "[4K]",
     gongyan: "[共演]",
     wuma: "[无码]",
+    top250: "[TOP250]",
   };
 
   static parseVar(txt, params, rep = "") {
@@ -57,6 +58,7 @@ class Offline {
 
         rename = rename?.toString().trim();
         if (rename) {
+          rename = rename.replaceAll("${top250}", "$top250");
           rename = rename.replaceAll("${zh}", "$zh");
           rename = rename.replaceAll("${crack}", "$crack");
           rename = rename.replaceAll("${fourk}", "$fourk");
@@ -117,6 +119,12 @@ class Offline {
       tags: options.tags.flatMap((key) => details[key]).filter(Boolean),
       gongyan: details.gongyan,
       wuma: details.wuma,
+      title: details.title,
+      actorLinks: details.actorLinks,
+      series: details.series,
+      serieshref: details.serieshref,
+      top250: details.top250,
+      year: details.year,
     };
   }
 
