@@ -367,7 +367,42 @@ class Req115 extends Drive115 {
       .catch(error => console.error("Error:", error));
   }
 
-  static handleRename(code, dir, files, cid, { rename, renameTxt, zh, crack, fourk, gongyan, wuma, top250 }) {
+  static createfile_desc(details){
+    const { url, title, actorLinks, series, serieshref } = details;
+    let actorLinksHtml = '';
+    let file_desc = '';
+    if (actorLinks) {
+      actorLinksHtml = actorLinks.map(actor => `
+      <p>
+        <a href="${actor.href}" target="_blank" textvalue="${actor.href}"
+          style="background-color: rgb(255, 255, 255); color: rgb(242, 2, 87);">
+          <span style="background-color: rgb(255, 255, 255); color: rgb(242, 2, 87);">
+            <strong>${actor.name}</strong>
+          </span>
+        </a>
+      </p>
+    `).join('');
+
+      file_desc = `
+      <p><a href="${url}" target="_blank">${url}</a></p>
+      <hr k_oof_k="line" style="border:0; border-top:1px #ccc dashed; height:0; overflow: hidden; margin: 10px 0;">
+      <p><strong>${title}</strong></p>
+      <hr k_oof_k="line" style="border:0; border-top:1px #ccc dashed; height:0; overflow: hidden; margin: 10px 0;">
+      ${actorLinksHtml}
+    `;
+      if (series) file_desc += `<p>
+          <a href="${serieshref}" target="_blank" textvalue="${serieshref}"
+            style="background-color: rgb(255, 255, 255); color: rgb(255, 6, 180);">
+            <span style="background-color: rgb(255, 255, 255); color: rgb(255, 6, 180);">
+              <strong>${series}</strong>
+            </span>
+          </a>
+        </p>`;
+    }
+    return file_desc;
+  }
+
+  static handleRename(code, dir, files, cid, file_desc,{ rename, renameTxt, zh, crack, fourk, gongyan, wuma, top250 }) {
     rename = rename.replaceAll("$top250", top250 ? renameTxt.top250 : "");
     rename = rename.replaceAll("$zh", zh ? renameTxt.zh : "");
     rename = rename.replaceAll("$crack", (crack && !wuma) ? renameTxt.crack : "");
@@ -383,6 +418,7 @@ class Req115 extends Drive115 {
       const { fid, ico, pc } = files[0];
       renameObj[fid] = `${rename}.${ico}`;
       strmObj[pc] = rename;
+      this.descEdit(fid, file_desc);
       this.createStrm(strmObj, dir, code);
       return this.filesBatchRename(renameObj);
     }
@@ -407,6 +443,7 @@ class Req115 extends Drive115 {
           const no = noTxt.replaceAll("${no}", `${idx + 1}`);
           renameObj[fid] = `${rename}${no}.${ico}`;
           strmObj[pc] = `${rename}${no}`;
+          this.descEdit(fid, file_desc);
         });
     }
 
@@ -424,10 +461,8 @@ class Req115 extends Drive115 {
 
 
 
-  static async handleOffline(
-    { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan, wuma, top250, title, actorLinks, serieshref, series, year },
-    magnets,
-  ) {
+  static async handleOffline( details, magnets ) {
+    const { dir, regex, codes, verifyOptions, code, rename, renameTxt, tags, clean, cover, gongyan, wuma, top250, year } = details;
     const newdir = [...dir, year];
     const res = { status: "error", msg: `获取目录失败: ${newdir.join("/")}` };
     const cid = await this.handleDir(newdir);
@@ -459,44 +494,14 @@ class Req115 extends Drive115 {
 
       const { data: srts = [] } = await this.filesAllSRTs(file_id);
       const files = [...videos, ...srts];
-      let actorLinksHtml = '';
-      let file_desc = '';
-      if (actorLinks) {
-        actorLinksHtml = actorLinks.map(actor => `
-      <p>
-        <a href="${actor.href}" target="_blank" textvalue="${actor.href}" 
-          style="background-color: rgb(255, 255, 255); color: rgb(242, 2, 87);">
-          <span style="background-color: rgb(255, 255, 255); color: rgb(242, 2, 87);">
-            <strong>${actor.name}</strong>
-          </span>
-        </a>
-      </p>
-    `).join('');
-
-        file_desc = `
-      <p><a href="${url}" target="_blank">${url}</a></p>
-      <hr k_oof_k="line" style="border:0; border-top:1px #ccc dashed; height:0; overflow: hidden; margin: 10px 0;">
-      <p><strong>${title}</strong></p>
-      <hr k_oof_k="line" style="border:0; border-top:1px #ccc dashed; height:0; overflow: hidden; margin: 10px 0;">
-      ${actorLinksHtml}
-    `;
-        if (series) file_desc += `<p>
-          <a href="${serieshref}" target="_blank" textvalue="${serieshref}" 
-            style="background-color: rgb(255, 255, 255); color: rgb(255, 6, 180);">
-            <span style="background-color: rgb(255, 255, 255); color: rgb(255, 6, 180);">
-              <strong>${series}</strong>
-            </span>
-          </a>
-        </p>`;
-      }
-      // const file_desc = `<p><a+href="${url}">${url}</a></p><p><strong>${title}</strong></p>`
+      const file_desc = this.createfile_desc(details)
       this.descEdit(file_id, file_desc);
 
       if (clean) await this.handleClean(files, file_id);
 
       if (tags.length) this.handleTags(videos, tags);
 
-      if (rename) this.handleRename(code, dir, files, file_id, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma, top250 });
+      if (rename) this.handleRename(code, dir, files, file_id, file_desc, { rename, renameTxt, zh: zh || srts.length, crack, fourk, gongyan, wuma, top250 });
 
       if (cover) {
         try {
